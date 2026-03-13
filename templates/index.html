@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Electricity Theft Detection</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: url("/static/background.png") no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+      min-height: 100vh;
+    }
+    html, body {
+      height: 100%;
+    }
+    .electric-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('https://i.gifer.com/QWc9.gif') no-repeat center center fixed;
+      background-size: cover;
+      opacity: 0.3;
+      z-index: -1;
+    }
+    .nav {
+      background-color: rgba(0, 0, 0, 0.85);
+      overflow: hidden;
+      padding: 12px 30px;
+      text-align: right;
+      box-shadow: 0 0 10px cyan;
+    }
+    .nav a {
+      color: cyan;
+      text-decoration: none;
+      margin: 0 15px;
+      font-size: 18px;
+      transition: 0.3s;
+    }
+    .nav a:hover {
+      background-color: cyan;
+      color: black;
+      padding: 8px 15px;
+      border-radius: 6px;
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 80vh;
+      padding: 40px 10px 60px 10px;
+      width: 100vw;
+      box-sizing: border-box;
+    }
+    .box {
+      background: rgba(0, 0, 0, 0.85);
+      padding: 32px 20px 32px 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px cyan;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      margin: 0 auto;
+    }
+    h2, h3 {
+      color: cyan;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 80%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      outline: none;
+      border-radius: 5px;
+      background: black;
+      color: cyan;
+      font-size: 18px;
+      text-align: center;
+      box-shadow: 0 0 10px cyan;
+      transition: 0.3s;
+    }
+    input:hover, input:focus {
+      box-shadow: 0 0 15px lime;
+    }
+    button {
+      padding: 12px 30px;
+      background: cyan;
+      border: none;
+      color: black;
+      font-size: 18px;
+      border-radius: 5px;
+      cursor: pointer;
+      box-shadow: 0 0 10px cyan;
+      transition: 0.3s;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: lime;
+      box-shadow: 0 0 20px lime;
+    }
+    .predictions, .final-decision {
+      margin-top: 25px;
+      font-size: 20px;
+      color: lime;
+      text-align: center;
+    }
+    .predictions ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .predictions li {
+      margin-bottom: 8px;
+      color: yellow;
+    }
+    .theft {
+      color: red;
+    }
+    .normal {
+      color: lime;
+    }
+    .decision-theft {
+      color: red;
+      text-shadow: 0 0 10px red;
+      border: 2px solid red;
+      background-color: rgba(255, 0, 0, 0.1);
+      padding: 10px;
+      border-radius: 5px;
+    }
+    /* Hamburger menu styles */
+    .hamburger {
+      position: fixed;
+      top: 25px;
+      left: 25px;
+      width: 35px;
+      height: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      z-index: 1001;
+    }
+    .hamburger span {
+      display: block;
+      height: 5px;
+      background: red;
+      border-radius: 3px;
+      transition: 0.3s;
+    }
+    /* Sidebar styles */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -320px;
+      width: 300px;
+      height: 100%;
+      background: rgba(0,0,0,0.97);
+      box-shadow: 2px 0 20px cyan;
+      color: white;
+      padding: 30px 20px;
+      transition: left 0.3s;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .sidebar.open {
+      left: 0;
+    }
+    .sidebar h3, .sidebar-heading {
+      color: cyan !important;
+      font-weight: bold;
+      text-shadow: 0 0 8px #222, 0 0 2px #0ff;
+      margin-top: 0;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+      transition: color 0.2s;
+    }
+    .sidebar h3:hover, .sidebar-heading:hover {
+      color: #fff !important;
+      text-shadow: 0 0 12px #0ff, 0 0 4px #fff;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 30px;
+    }
+    .sidebar li {
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    .approved {
+      color: lime;
+    }
+    .pending {
+      color: orange;
+    }
+    .sidebar .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 28px;
+      color: red;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    @media (max-width: 700px) {
+      .sidebar { width: 90vw; }
+    }
+    .meter-link {
+      color: #0ff;
+      cursor: pointer;
+      text-decoration: underline;
+      font-weight: bold;
+    }
+    .meter-link:hover {
+      color: #fff;
+    }
+    /* Modal styles */
+    .modal-bg {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal {
+      background: #111;
+      color: #fff;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px #0ff;
+      min-width: 320px;
+      max-width: 90vw;
+      position: relative;
+      text-align: left;
+    }
+    .modal .close-btn {
+      color: red;
+      position: absolute;
+      top: 10px;
+      right: 18px;
+      font-size: 28px;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    .modal label {
+      color: #0ff;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    .modal-content-row {
+      margin-bottom: 12px;
+    }
+    .approve-btn, .reject-btn {
+      margin-left: 6px;
+      padding: 2px 10px;
+      font-size: 12px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s, color 0.2s;
+    }
+    .approve-btn {
+      background: #0f0;
+      color: #111;
+    }
+    .approve-btn:hover {
+      background: #0c0;
+      color: #fff;
+    }
+    .reject-btn {
+      background: #f00;
+      color: #fff;
+    }
+    .reject-btn:hover {
+      background: #a00;
+      color: #fff;
+    }
+    .status {
+      margin-left: 8px;
+      font-weight: bold;
+    }
+    .status.approved {
+      color: lime;
+    }
+    .status.pending {
+      color: orange;
+    }
+    .status.rejected {
+      color: red;
+    }
+    /* Bottom info boxes */
+    .bottom-boxes-row {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: stretch;
+      margin-top: 60px;
+      margin-bottom: 0;
+      position: relative;
+    }
+    .info-box.big {
+      flex: 1 1 25%;
+      min-width: 180px;
+      max-width: 25vw;
+      height: 160px;
+      margin: 0 10px;
+      background: rgba(0,0,0,0.92);
+      border-radius: 18px;
+      box-shadow: 0 0 18px #0ff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: 3px solid #0ff;
+      transition: box-shadow 0.2s, background 0.2s, border 0.2s;
+    }
+    .info-box.big:hover {
+      box-shadow: 0 0 32px #0ff, 0 0 12px #fff;
+      background: #111;
+      border: 3px solid #fff;
+    }
+    .info-box.big .info-icon {
+      font-size: 54px;
+      margin-bottom: 10px;
+      color: #0ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .info-box.big .info-label {
+      color: #fff;
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 8px;
+    }
+    @media (max-width: 900px) {
+      .info-box.big { min-width: 120px; height: 110px; }
+      .info-box.big .info-label { font-size: 13px; }
+      .info-box.big .info-icon { font-size: 32px; }
+    }
+    @media (max-width: 600px) {
+      .bottom-boxes-row { flex-direction: column; gap: 18px; }
+      .info-box.big { width: 90vw; max-width: 100vw; min-width: 0; margin: 0 auto; }
+    }
+    .sidebar-section {
+      margin-bottom: 18px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #222;
+    }
+    .profile-section {
+      display: flex;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .profile-pic {
+      width: 44px;
+      height: 44px;
+      background: cyan;
+      color: #222;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      font-weight: bold;
+      margin-right: 12px;
+      border: 2px solid #fff;
+    }
+    .profile-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .profile-name {
+      font-weight: bold;
+      color: cyan;
+      margin-bottom: 4px;
+    }
+    .sidebar-btn {
+      background: #0ff;
+      color: #111;
+      border: none;
+      border-radius: 5px;
+      padding: 4px 12px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 2px;
+      margin-bottom: 2px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .sidebar-btn:hover {
+      background: #111;
+      color: #0ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="electric-animation"></div>
+
+  <!-- Hamburger menu -->
+  <div class="hamburger" onclick="toggleSidebar()">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+
+  <!-- Sidebar -->
+  <div id="sidebar" class="sidebar">
+    <button class="close-btn" onclick="toggleSidebar()">&times;</button>
+    <div style="height:60px;"></div> <!-- Spacer to push headings down -->
+    <!-- Profile Section -->
+    <div class="sidebar-section profile-section">
+      <div class="profile-pic">A</div>
+      <div class="profile-info">
+        <div class="profile-name">Admin</div>
+        <button class="sidebar-btn" onclick="alert('Profile editing coming soon!')">Edit Profile</button>
+      </div>
+    </div>
+    <!-- Move Approvals and History just after profile -->
+    <div class="sidebar-section">
+      <h3 class="sidebar-heading" onclick="toggleSection('approvals-list')">New Connection Approvals</h3>
+      <ul id="approvals-list" style="display:none;">
+        {% set meter_numbers = ['SN1001','SN1002','SN1003','SN1004','SN1005','SN1006','SN1007','SN1008','SN1009','SN1010'] %}
+        {% set names = ['Amit Sharma','Priya Singh','Rahul Verma','Sneha Patel','Vikram Rao','Anjali Mehta','Rohit Das','Kavita Nair','Suresh Reddy','Pooja Joshi'] %}
+        {% set streets = ['MG Road','Station Road','Park Street','Main Bazaar','Gandhi Marg','Nehru Street','Lake View','Hill Top','Market Road','Sunset Avenue'] %}
+        {% set cities = ['Mumbai','Delhi','Bangalore','Hyderabad','Chennai','Kolkata','Pune','Ahmedabad','Jaipur','Lucknow'] %}
+        {% set villages = ['Rampur','Lakshmipur','Rajgarh','Suryanagar','Devgaon','Chandrapur','Gopalpur','Vijaypur','Shantinagar','Premnagar'] %}
+        {% for sn in meter_numbers %}
+          {% set idx = loop.index0 %}
+          {% set name = names[idx] %}
+          {% set age = (range(35, 60)|random) %}
+          {% set mobile = '9' ~ (range(100000000, 999999999)|random) %}
+          {% set address = 'D.No ' ~ (range(1, 200)|random) ~ ', ' ~ streets[idx] ~ ', ' ~ (villages[idx] if idx < 5 else cities[idx]) ~ ', ' ~ (range(100000, 999999)|random) %}
+          {% set aadhar = (range(100000000000, 999999999999)|random) %}
+          {% if loop.index0 < 3 %}
+            <li id="meter-{{sn}}">
+              <span class="meter-link" onclick="showDetails('{{name}}','{{age}}','{{mobile}}','{{address}}','{{aadhar}}')">{{ sn }}</span>
+              <span class="status approved" id="status-{{sn}}">&#10004; Approved</span>
+            </li>
+          {% else %}
+            <li id="meter-{{sn}}">
+              <span class="meter-link" onclick="showDetails('{{name}}','{{age}}','{{mobile}}','{{address}}','{{aadhar}}')">{{ sn }}</span>
+              <span class="status pending" id="status-{{sn}}">&#9203; Pending</span>
+              <button class="approve-btn" onclick="setStatus('{{sn}}','approved')">APPROVE</button>
+              <button class="reject-btn" onclick="setStatus('{{sn}}','rejected')">REJECT</button>
+            </li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="sidebar-section">
+      <h3 class="sidebar-heading" onclick="toggleSection('history-list')">Consumption History</h3>
+      <ul id="history-list" style="display:none;">
+        {% set months = ['Jan 2025','Feb 2025','Mar 2025','Apr 2025','May 2025','Jun 2025'] %}
+        {% for m in months %}
+          <li>{{ m }}: <span style="color:yellow">{{ (range(800, 2000)|random) }} kWh</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+    <!-- Reports & Analytics -->
+    <div class="sidebar-section">
+      <h3 class="sidebar-heading" onclick="toggleSection('reports-list')">Reports & Analytics</h3>
+      <ul id="reports-list" style="display:none;">
+        <li><a href="#" style="color:cyan;">Monthly Report (PDF)</a></li>
+        <li><a href="#" style="color:cyan;">Annual Report (PDF)</a></li>
+        <li>Thefts this month: <span style="color:yellow;">2</span></li>
+        <li>Pending Approvals: <span style="color:orange;">7</span></li>
+      </ul>
+    </div>
+    <!-- Shortcuts -->
+    <div class="sidebar-section">
+      <h3 class="sidebar-heading" onclick="toggleSection('shortcuts-list')">Shortcuts</h3>
+      <ul id="shortcuts-list" style="display:none;">
+        <li><b>Ctrl+L</b>: Logout</li>
+        <li><b>Ctrl+H</b>: Home</li>
+        <li><b>Ctrl+P</b>: Predict</li>
+      </ul>
+    </div>
+    <!-- Recent Activity -->
+    <div class="sidebar-section">
+      <h3 class="sidebar-heading" onclick="toggleSection('activity-list')">Recent Activity</h3>
+      <ul id="activity-list" style="display:none;">
+        <li>Approved SN1005</li>
+        <li>Rejected SN1007</li>
+        <li>Logged in at 10:15 AM</li>
+      </ul>
+    </div>
+    <!-- Move Quick Links, Notifications, Theme Switcher, Help & Support to bottom -->
+    <div class="sidebar-section">
+      <h3 class="sidebar-heading" onclick="toggleSection('quicklinks-list')">Quick Links</h3>
+      <ul id="quicklinks-list" style="display:none;">
+        <li><a href="/about" style="color:cyan;">About Project</a></li>
+        <li><a href="https://www.google.com" target="_blank" style="color:cyan;">Google</a></li>
+        <li><a href="/Govardhan%20Major%20Project%20%20Final%20Report.docx" style="color:cyan;">Documentation</a></li>
+      </ul>
+    </div>
+    <div class="sidebar-section">
+      <h3 class="sidebar-heading" onclick="toggleSection('notifications-list')">Notifications</h3>
+      <ul id="notifications-list" style="display:none;">
+        <li>New connection request SN1011</li>
+        <li>Theft detected in SN1004</li>
+        <li>System update available</li>
+      </ul>
+    </div>
+    <div class="sidebar-section">
+      <h3 class="sidebar-heading" onclick="toggleSection('theme-list')">Theme Switcher</h3>
+      <ul id="theme-list" style="display:none;">
+        <li><button class="sidebar-btn" onclick="toggleTheme()">Toggle Light/Dark</button></li>
+      </ul>
+    </div>
+    <div class="sidebar-section">
+      <h3 class="sidebar-heading" onclick="toggleSection('help-list')">Help & Support</h3>
+      <ul id="help-list" style="display:none;">
+        <li><a href="#" style="color:cyan;">FAQ</a></li>
+        <li><a href="#" style="color:cyan;">Create Support Ticket</a></li>
+        <li><a href="https://wa.me/8688088978" target="_blank" style="color:#25D366;">Chat on WhatsApp</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 🔷 Navigation Bar -->
+  <div class="nav">
+    <a href="/home">Home</a>
+    <a href="/about">About</a>
+    <a href="/logout">Logout</a>
+  </div>
+
+  <!-- 📦 Main Container -->
+  <div class="container">
+    <div class="box">
+      <h2>Electricity Theft Detection</h2>
+      <form action="/predict" method="post">
+        <input type="text" name="Electricity Consumption in kWh" placeholder="Electricity Consumption in kWh" required value="{{ input_values['Electricity Consumption in kWh'] if input_values else '' }}"><br>
+        <input type="text" name="Voltage" placeholder="Voltage" required value="{{ input_values['Voltage'] if input_values else '' }}"><br>
+        <input type="text" name="Frequency" placeholder="Frequency" required value="{{ input_values['Frequency'] if input_values else '' }}"><br>
+        <input type="text" name="Peak Hours Usage" placeholder="Peak Hours Usage" required value="{{ input_values['Peak Hours Usage'] if input_values else '' }}"><br>
+        <button type="submit">⚡ Predict ⚡</button>
+      </form>
+
+      {% if prediction %}
+      <div class="predictions">
+        <h3>Predictions:</h3>
+        <ul>
+          {% for model, result in prediction.items() %}
+          <li>
+            <span>{{ model }}:</span>
+            <strong>
+              {% if result == 'Theft' %}
+              <span class="theft">{{ result }}</span>
+              {% else %}
+              <span class="normal">{{ result }}</span>
+              {% endif %}
+            </strong>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="final-decision {% if final_decision == 'Theft' %}decision-theft{% else %}normal{% endif %}">
+        <h3>⚠ Final Decision: {{ final_decision }} ⚠</h3>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Bottom Info Boxes (at the end of the scrollable page) -->
+  <div class="bottom-boxes-row">
+    <div class="info-box big" onclick="showInfoModal('customer')">
+      <span class="info-icon">
+        <!-- Customer care: head with headphones SVG -->
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="20" stroke="#0ff" stroke-width="3" fill="#111"/>
+          <ellipse cx="24" cy="22" rx="10" ry="12" fill="#222" stroke="#0ff" stroke-width="2"/>
+          <ellipse cx="24" cy="24" rx="7" ry="8" fill="#0ff" fill-opacity="0.2"/>
+          <circle cx="24" cy="24" r="5" fill="#0ff" fill-opacity="0.7"/>
+          <rect x="13" y="34" width="22" height="5" rx="2.5" fill="#0ff" fill-opacity="0.2"/>
+          <rect x="10" y="18" width="4" height="12" rx="2" fill="#0ff" fill-opacity="0.5"/>
+          <rect x="34" y="18" width="4" height="12" rx="2" fill="#0ff" fill-opacity="0.5"/>
+        </svg>
+      </span>
+      <div class="info-label">Customer Care</div>
+    </div>
+    <div class="info-box big" onclick="showInfoModal('emergency')">
+      <span class="info-icon">&#9888;</span>
+      <div class="info-label">Emergency</div>
+    </div>
+    <div class="info-box big" onclick="showInfoModal('complaint')">
+      <span class="info-icon">&#128221;</span>
+      <div class="info-label">Complaints</div>
+    </div>
+    <div class="info-box big" onclick="showInfoModal('feedback')">
+      <span class="info-icon">&#128172;</span>
+      <div class="info-label">Feedbacks/Suggestions</div>
+    </div>
+  </div>
+
+  <!-- Info Modal -->
+  <div id="info-modal-bg" class="modal-bg" onclick="hideInfoModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <button class="close-btn" onclick="hideInfoModal(event)">&times;</button>
+      <div id="info-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal for meter details -->
+  <div id="modal-bg" class="modal-bg" onclick="hideDetails(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <button class="close-btn" onclick="hideDetails(event)">&times;</button>
+      <div class="modal-content-row"><label>NAME:</label> <span id="modal-name"></span></div>
+      <div class="modal-content-row"><label>AGE:</label> <span id="modal-age"></span></div>
+      <div class="modal-content-row"><label>MOBILE.NO:</label> <span id="modal-mobile"></span></div>
+      <div class="modal-content-row"><label>ADDRESS:</label> <span id="modal-address"></span></div>
+      <div class="modal-content-row"><label>AADHAR.NO:</label> <span id="modal-aadhar"></span></div>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      var sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('open');
+    }
+    function toggleSection(id) {
+      var el = document.getElementById(id);
+      if (el.style.display === 'none' || el.style.display === '') {
+        el.style.display = 'block';
+      } else {
+        el.style.display = 'none';
+      }
+    }
+    function toggleTheme() {
+      alert('Theme switching coming soon!');
+    }
+    function showDetails(name, age, mobile, address, aadhar) {
+      document.getElementById('modal-name').textContent = name;
+      document.getElementById('modal-age').textContent = age;
+      document.getElementById('modal-mobile').textContent = mobile;
+      document.getElementById('modal-address').textContent = address;
+      document.getElementById('modal-aadhar').textContent = aadhar;
+      document.getElementById('modal-bg').style.display = 'flex';
+    }
+    function hideDetails(e) {
+      document.getElementById('modal-bg').style.display = 'none';
+    }
+    // Set status for meter number
+    function setStatus(sn, status) {
+      var statusSpan = document.getElementById('status-' + sn);
+      var approveBtn = document.querySelector('#meter-' + sn + ' .approve-btn');
+      var rejectBtn = document.querySelector('#meter-' + sn + ' .reject-btn');
+      if (status === 'approved') {
+        statusSpan.innerHTML = '&#10004; Approved';
+        statusSpan.className = 'status approved';
+        approveBtn.style.display = 'none';
+        rejectBtn.style.display = 'none';
+      } else if (status === 'rejected') {
+        statusSpan.innerHTML = '&#10008; Rejected';
+        statusSpan.className = 'status rejected';
+        approveBtn.style.display = 'none';
+        rejectBtn.style.display = 'none';
+      }
+    }
+    // Info modal logic
+    function showInfoModal(type) {
+      var content = '';
+      if (type === 'customer') {
+        // Random landline
+        var landline = '0' + (Math.floor(Math.random()*9000000000)+1000000000);
+        content = `<div style='text-align:center;'>
+          <span style='font-size:32px;color:#0ff;'>&#128222;</span><br>
+          <b>Customer Care</b><br><br>
+          <b>Land Line number:</b> `+landline+`<br>
+          <b>Mobile numbers:</b><br>+91 8790862911, +91 8688088978, +91 7893139927<br>
+          <b>WhatsApp:</b><br>
+          <a href='https://wa.me/918688088978' target='_blank' style='color:#25D366;text-decoration:underline;'>+91 8688088978</a>, 
+          <a href='https://wa.me/918790862911' target='_blank' style='color:#25D366;text-decoration:underline;'>+91 8790862911</a><br>
+        </div>`;
+      } else if (type === 'emergency') {
+        // Random numbers
+        var lineman = '9' + (Math.floor(Math.random()*900000000)+100000000);
+        var mandal = '+91 ' + (Math.floor(Math.random()*9000000000)+1000000000);
+        var city = '+91 ' + (Math.floor(Math.random()*9000000000)+1000000000);
+        var district = '+91 ' + (Math.floor(Math.random()*9000000000)+1000000000);
+        content = `<div style='text-align:center;'>
+          <span style='font-size:32px;color:#f00;'>&#9888;</span><br>
+          <b>Emergency</b><br><br>
+          <b>RPF Helpline:</b> 182<br>
+          <b>Fire:</b> 101<br>
+          <b>Ambulance:</b> 108<br>
+          <b>Police:</b> 100<br><br>
+          <b>OTHER</b><br>
+          <b>Line Man:</b> `+lineman+`<br>
+          <b>Mandal Substation:</b> `+mandal+`<br>
+          <b>City Substation:</b> `+city+`<br>
+          <b>District Power Station:</b> `+district+`<br>
+        </div>`;
+      } else if (type === 'complaint') {
+        content = `<div style='text-align:center;'>
+          <span style='font-size:32px;color:#ff0;'>&#128221;</span><br>
+          <b>Complaints</b><br><br>
+          No complaints
+        </div>`;
+      } else if (type === 'feedback') {
+        content = `<div style='text-align:center;'>
+          <span style='font-size:32px;color:#0ff;'>&#128172;</span><br>
+          <b>Feedbacks/Suggestions</b><br><br>
+          Empty
+        </div>`;
+      }
+      document.getElementById('info-modal-content').innerHTML = content;
+      document.getElementById('info-modal-bg').style.display = 'flex';
+    }
+    function hideInfoModal(e) {
+      document.getElementById('info-modal-bg').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
